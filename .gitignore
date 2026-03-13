@@ -1,0 +1,24 @@
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env*.local
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# Build output
+frontend/dist/
+frontend/build/
+backend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
