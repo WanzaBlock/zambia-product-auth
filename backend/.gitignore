@@ -1,0 +1,5 @@
+node_modules/
+qr-codes/
+.env
+.vercel
+.env*.local

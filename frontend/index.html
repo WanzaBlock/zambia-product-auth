@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>WanzaBlock — Product Authentication</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script data-cfasync="false" src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --teal: #5bcfcf; --teal-dim: #3a9a9a; --teal-glow: rgba(91,207,207,0.10);
+      --teal-glow2: rgba(91,207,207,0.18); --teal-lit: #8ddede;
+      --red: #ff4f4f; --red-lit: #ff7070; --amber: #ffb020; --amber-lit: #ffc94a;
+      --bg: #1c2023; --surface: rgba(28,34,38,0.88); --surface2: rgba(32,40,46,0.9);
+      --border: rgba(91,207,207,0.14); --border-hi: rgba(91,207,207,0.32);
+      --text: #daeaea; --text-dim: #6a9898; --text-mute: #445858;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-ui: 'Rajdhani', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+      --header-h: 56px; --bottom-nav-h: 62px;
+    }
+    html, body { height: 100%; }
+    body { font-family: var(--font-ui); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(50,90,90,0.40) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 100%, rgba(30,50,55,0.35) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 10% 60%, rgba(40,65,60,0.18) 0%, transparent 50%), #1c2023; pointer-events: none; z-index: 0; }
+    body::after { content: ''; position: fixed; inset: 0; background-image: radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6) 0%, transparent 100%), radial-gradient(1px 1px at 25% 40%, rgba(255,255,255,0.4) 0%, transparent 100%), radial-gradient(1px 1px at 40% 8%, rgba(255,255,255,0.5) 0%, transparent 100%), radial-gradient(1px 1px at 55% 30%, rgba(255,255,255,0.3) 0%, transparent 100%), radial-gradient(1px 1px at 70% 55%, rgba(255,255,255,0.5) 0%, transparent 100%), radial-gradient(1px 1px at 85% 20%, rgba(255,255,255,0.4) 0%, transparent 100%), radial-gradient(1.5px 1.5px at 33% 60%, rgba(91,207,207,0.5) 0%, transparent 100%), radial-gradient(1.5px 1.5px at 75% 35%, rgba(91,207,207,0.4) 0%, transparent 100%); pointer-events: none; z-index: 0; }
+
+    #verify-page .app { min-height: unset; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+    #verify-page header { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; background: rgba(5,12,18,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; min-height: var(--header-h); gap: 10px; }
+    .logo { display: flex; align-items: center; gap: 9px; cursor: pointer; transition: opacity 0.15s; }
+    .logo:hover { opacity: 0.8; }
+    .logo-mark { width: 30px; height: 30px; color: var(--teal); flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(91,207,207,0.5)); }
+    .logo-name { font-family: var(--font-ui); font-size: 0.84rem; font-weight: 700; letter-spacing: 0.02em; color: var(--text); line-height: 1; }
+    .logo-name span { color: var(--teal); }
+    .logo-sub { font-size: 0.55rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mute); margin-top: 2px; }
+    .logo-motto { font-size: 0.52rem; letter-spacing: 0.05em; color: var(--teal-dim); margin-top: 1px; font-style: italic; font-family: var(--font-display); }
+    .header-right { display: flex; gap: 6px; flex-shrink: 0; }
+    .nav-btn { padding: 6px 11px; border-radius: 6px; font-family: var(--font-ui); font-size: 0.73rem; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(91,207,207,0.2); background: transparent; color: var(--text-dim); text-transform: uppercase; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+    .nav-btn.active { background: var(--teal-glow2); border-color: var(--teal); color: var(--teal); box-shadow: 0 0 12px rgba(91,207,207,0.2); }
+    main { flex: 1; }
+    .screen, .loading-screen { display: none; flex-direction: column; gap: 16px; padding: 24px 18px 40px; animation: fadeUp 0.35s ease both; }
+    .screen.active, .loading-screen.active { display: flex; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes iconPop { from { transform:scale(0.4); opacity:0; } to { transform:scale(1); opacity:1; } }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
+    @keyframes scanMove { 0% { transform:translateY(-88px); opacity:0; } 8% { opacity:1; } 92% { opacity:1; } 100% { transform:translateY(88px); opacity:0; } }
+    @keyframes countUp { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+    .hero { padding: 8px 0 4px; }
+    .hero h1 { font-family: var(--font-display); font-size: clamp(2.4rem,8vw,3.4rem); font-weight: 900; line-height: 1.0; color: var(--text); margin-bottom: 12px; }
+    .hero h1 em { font-style: italic; color: var(--teal); text-shadow: 0 0 30px rgba(91,207,207,0.4); }
+    .hero p { font-size: 0.9rem; color: var(--text-dim); line-height: 1.6; font-weight: 500; max-width: 300px; }
+    .scan-btn { width: 100%; padding: 16px 24px; border-radius: 10px; border: 1px solid var(--teal); background: linear-gradient(135deg, rgba(91,207,207,0.18) 0%, rgba(50,140,140,0.12) 100%); color: var(--teal); font-family: var(--font-ui); font-weight: 700; font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.2s; position: relative; overflow: hidden; box-shadow: 0 0 0 1px rgba(91,207,207,0.1), 0 0 30px rgba(91,207,207,0.12), inset 0 1px 0 rgba(91,207,207,0.15); -webkit-tap-highlight-color: transparent; }
+    .scan-btn::before { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(91,207,207,0.1),transparent); transition:left 0.6s ease; }
+    .scan-btn:hover::before { left:150%; }
+    .scan-btn:hover { background:linear-gradient(135deg,rgba(91,207,207,0.26) 0%,rgba(50,140,140,0.18) 100%); }
+    .scan-btn:active { transform:scale(0.98); }
+    .scan-btn svg { width:22px; height:22px; flex-shrink:0; }
+    .manual-section { display:flex; flex-direction:column; gap:8px; }
+    .manual-label { font-size:0.63rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-mute); }
+    .manual-row { display:flex; gap:8px; }
+    .manual-input { flex:1; background:rgba(91,207,207,0.04); border:1px solid var(--border); border-radius:8px; padding:11px 12px; color:var(--text); font-family:var(--font-mono); font-size:0.78rem; outline:none; transition:border-color 0.2s,box-shadow 0.2s; min-width:0; }
+    .manual-input:focus { border-color:var(--teal-dim); box-shadow:0 0 0 3px rgba(91,207,207,0.08); }
+    .manual-input::placeholder { color:var(--text-mute); font-family:var(--font-ui); font-size:0.79rem; }
+    .manual-btn { padding:11px 16px; border-radius:8px; border:1px solid var(--border-hi); background:var(--teal-glow); color:var(--teal); font-family:var(--font-ui); font-weight:700; font-size:0.82rem; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; white-space:nowrap; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+    .manual-btn:hover { background:var(--teal-glow2); }
+    .manual-btn:active { transform:scale(0.96); }
+    .feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .feature-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:15px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; backdrop-filter:blur(10px); transition:border-color 0.2s; }
+    .feature-card:hover { border-color:var(--border-hi); }
+    .feature-icon { font-size:1.5rem; }
+    .feature-text { font-size:0.59rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); text-align:center; line-height:1.4; }
+    .trust-bar { display:flex; justify-content:center; gap:14px; padding:6px 0 2px; flex-wrap:wrap; }
+    .trust-item { display:flex; align-items:center; gap:5px; font-size:0.61rem; font-weight:600; letter-spacing:0.04em; color:var(--text-mute); }
+    .trust-dot { width:13px; height:13px; border:1px solid var(--teal-dim); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.5rem; color:var(--teal); flex-shrink:0; }
+    .sys-health { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; backdrop-filter: blur(12px); }
+    .sys-health-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+    .sys-stat { display: flex; flex-direction: column; align-items: center; padding: 16px 8px 13px; gap: 5px; position: relative; }
+    .sys-stat + .sys-stat::before { content: ''; position: absolute; left: 0; top: 18%; bottom: 18%; width: 1px; background: var(--border); }
+    .sys-stat-value { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 500; color: var(--teal); line-height: 1; animation: countUp 0.5s ease both; }
+    .sys-stat-value.loading { color: var(--text-mute); font-size: 1.1rem; letter-spacing: 0.1em; }
+    .sys-stat-value.warn { color: var(--amber-lit); }
+    .sys-stat-label { font-size: 0.57rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-mute); text-align: center; line-height: 1.4; }
+    .sys-net-status { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 14px; border-top: 1px solid var(--border); background: rgba(91,207,207,0.025); }
+    .net-dot { width: 7px; height: 7px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 8px #3ddc84; animation: pulse 2.4s ease infinite; flex-shrink: 0; }
+    .net-dot.degraded { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .net-dot.down { background: var(--red); box-shadow: 0 0 8px var(--red); animation: none; }
+    .net-label { font-size: 0.67rem; font-weight: 600; letter-spacing: 0.05em; color: var(--text-dim); }
+    .net-label strong { color: #3ddc84; font-weight: 700; }
+    .net-label.degraded strong { color: var(--amber-lit); }
+    .net-label.down strong { color: var(--red-lit); }
+    .scanner-header { display:flex; align-items:center; gap:12px; }
+    .back-btn { width:38px; height:38px; background:var(--surface); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-dim); transition:all 0.15s; backdrop-filter:blur(10px); flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+    .back-btn:hover { border-color:var(--border-hi); color:var(--teal); }
+    .back-btn svg { width:18px; height:18px; }
+    .scanner-title { font-family:var(--font-ui); font-weight:700; font-size:1rem; letter-spacing:0.05em; color:var(--text); text-transform:uppercase; }
+    .scanner-wrap { position:relative; background:#000; border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+    #qr-reader { width:100% !important; border:none !important; }
+    #qr-reader video { width:100% !important; display:block; }
+    #qr-reader img { display:none !important; }
+    #qr-reader * { border:none !important; }
+    .scanner-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    .scanner-frame { width:200px; height:200px; position:relative; }
+    .scanner-frame-inner { position:absolute; inset:0; border:1px solid rgba(91,207,207,0.25); border-radius:8px; }
+    .scanner-frame::before,.scanner-frame::after,.scanner-frame-inner::before,.scanner-frame-inner::after { content:''; position:absolute; width:22px; height:22px; border-color:var(--teal); border-style:solid; }
+    .scanner-frame::before { top:-1px; left:-1px; border-width:2px 0 0 2px; border-radius:4px 0 0 0; }
+    .scanner-frame::after { top:-1px; right:-1px; border-width:2px 2px 0 0; border-radius:0 4px 0 0; }
+    .scanner-frame-inner::before { bottom:-1px; left:-1px; border-width:0 0 2px 2px; border-radius:0 0 0 4px; }
+    .scanner-frame-inner::after { bottom:-1px; right:-1px; border-width:0 2px 2px 0; border-radius:0 0 4px 0; }
+    .scan-line { position:absolute; left:4px; right:4px; height:1px; top:50%; background:linear-gradient(90deg,transparent,var(--teal),transparent); box-shadow:0 0 10px var(--teal); animation:scanMove 2s ease-in-out infinite; }
+    .scanner-hint { text-align:center; color:var(--text-mute); font-size:0.8rem; }
+    .loading-screen { align-items:center; justify-content:center; min-height:50vh; gap:20px; }
+    .spinner { width:52px; height:52px; border:2px solid rgba(91,207,207,0.15); border-top-color:var(--teal); border-radius:50%; animation:spin 0.8s linear infinite; }
+    .loading-text { font-family:var(--font-display); font-size:1.1rem; font-style:italic; color:var(--text-dim); }
+    .result-badge { border-radius:16px; padding:32px 24px 26px; text-align:center; position:relative; overflow:hidden; backdrop-filter:blur(16px); }
+    .result-badge::before { content:''; position:absolute; top:-80px; left:50%; transform:translateX(-50%); width:240px; height:240px; border-radius:50%; filter:blur(70px); opacity:0.2; }
+    .result-badge.genuine { background:linear-gradient(160deg,rgba(0,40,35,0.9),rgba(0,55,50,0.85)); border:1px solid rgba(91,207,207,0.35); }
+    .result-badge.genuine::before { background:var(--teal); }
+    .result-badge.clone,.result-badge.notfound { background:linear-gradient(160deg,rgba(40,5,5,0.9),rgba(55,10,10,0.85)); border:1px solid rgba(255,79,79,0.35); }
+    .result-badge.clone::before,.result-badge.notfound::before { background:var(--red); }
+    .result-badge.expired,.result-badge.suspicious { background:linear-gradient(160deg,rgba(35,20,0,0.9),rgba(50,28,0,0.85)); border:1px solid rgba(255,176,32,0.35); }
+    .result-badge.expired::before,.result-badge.suspicious::before { background:var(--amber); }
+    .result-icon { font-size:3.4rem; margin-bottom:12px; display:block; position:relative; z-index:1; animation:iconPop 0.45s cubic-bezier(.34,1.56,.64,1) both; }
+    .result-status { font-family:var(--font-display); font-weight:900; font-size:clamp(1.8rem,6vw,2.2rem); margin-bottom:8px; position:relative; z-index:1; line-height:1; }
+    .genuine .result-status { color:var(--teal-lit); text-shadow:0 0 30px rgba(91,207,207,0.5); }
+    .clone .result-status,.notfound .result-status { color:var(--red-lit); }
+    .expired .result-status,.suspicious .result-status { color:var(--amber-lit); }
+    .result-message { font-size:0.87rem; color:rgba(224,244,244,0.55); max-width:240px; margin:0 auto; line-height:1.6; position:relative; z-index:1; font-weight:500; }
+    .detail-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; backdrop-filter:blur(12px); }
+    .detail-card-label { font-size:0.62rem; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-mute); margin-bottom:12px; }
+    .detail-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid rgba(91,207,207,0.06); gap:12px; }
+    .detail-row:last-child { border-bottom:none; padding-bottom:0; }
+    .detail-label { font-size:0.67rem; color:var(--text-mute); font-weight:600; letter-spacing:0.08em; text-transform:uppercase; flex-shrink:0; }
+    .detail-value { font-size:0.85rem; font-weight:600; text-align:right; color:var(--text); min-width:0; word-break:break-word; }
+    .scan-bar-track { height:3px; background:rgba(91,207,207,0.1); border-radius:2px; overflow:hidden; margin-top:7px; }
+    .scan-bar-fill { height:100%; border-radius:2px; transition:width 0.8s cubic-bezier(.22,.68,0,1.2); background:var(--teal); box-shadow:0 0 8px var(--teal); }
+    .scan-bar-fill.warn { background:var(--amber); box-shadow:0 0 8px var(--amber); }
+    .scan-bar-fill.danger { background:var(--red-lit); box-shadow:0 0 8px var(--red-lit); }
+    .report-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; backdrop-filter:blur(12px); }
+    .report-form { display:flex; flex-direction:column; gap:10px; }
+    .report-textarea { background:rgba(91,207,207,0.03); border:1px solid var(--border); border-radius:8px; padding:11px 14px; color:var(--text); font-family:var(--font-ui); font-size:0.875rem; resize:none; height:80px; outline:none; transition:border-color 0.15s; width:100%; }
+    .report-textarea:focus { border-color:rgba(255,79,79,0.4); }
+    .report-textarea::placeholder { color:var(--text-mute); }
+    .action-row { display:flex; gap:8px; }
+    .action-btn { flex:1; padding:13px; border-radius:8px; border:none; font-family:var(--font-ui); font-weight:700; font-size:0.84rem; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; min-height:48px; -webkit-tap-highlight-color:transparent; }
+    .action-btn:active { transform:scale(0.97); }
+    .btn-primary { background:linear-gradient(135deg,rgba(91,207,207,0.25),rgba(50,140,140,0.2)); border:1px solid var(--teal) !important; color:var(--teal); }
+    .btn-secondary { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1) !important; color:var(--text-dim); }
+    .btn-secondary:hover { border-color:rgba(255,255,255,0.2) !important; color:var(--text); }
+    .btn-danger { width:100%; background:rgba(255,79,79,0.08); border:1px solid rgba(255,79,79,0.3) !important; color:var(--red-lit); }
+    .form-input { width:100%; background:rgba(91,207,207,0.04); border:1px solid var(--border); border-radius:8px; padding:11px 14px; color:var(--text); font-family:var(--font-ui); font-size:0.9rem; font-weight:500; outline:none; transition:border-color 0.15s,box-shadow 0.15s; -webkit-appearance:none; }
+    .form-input:focus { border-color:var(--teal-dim); box-shadow:0 0 0 3px rgba(91,207,207,0.07); }
+    .form-input::placeholder { color:var(--text-mute); }
+    .form-input[type="date"] { color-scheme:dark; }
+    .proof-card { background:rgba(20,32,30,0.9); border:1px solid rgba(91,207,207,0.25); border-radius:12px; padding:16px; backdrop-filter:blur(12px); }
+    .proof-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+    .proof-check { width:20px; height:20px; background:rgba(91,207,207,0.15); border:1px solid rgba(91,207,207,0.4); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:var(--teal); flex-shrink:0; }
+    .proof-title { font-family:var(--font-ui); font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--teal); }
+    .proof-row { display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:5px 0; border-bottom:1px solid rgba(91,207,207,0.06); }
+    .proof-row:last-of-type { border-bottom:none; }
+    .proof-label { font-size:0.68rem; color:var(--text-mute); flex-shrink:0; }
+    .proof-value { font-size:0.72rem; color:var(--text-dim); text-align:right; word-break:break-all; font-family:var(--font-mono); }
+    .proof-link { display:block; margin-top:12px; font-family:var(--font-ui); font-size:0.74rem; font-weight:600; color:var(--teal); text-decoration:none; padding:8px 12px; border:1px solid rgba(91,207,207,0.2); border-radius:7px; text-align:center; transition:all 0.15s; background:rgba(91,207,207,0.04); }
+    .proof-link:hover { background:rgba(91,207,207,0.1); border-color:rgba(91,207,207,0.4); }
+    .bottom-glow { height:1px; background:linear-gradient(90deg,transparent,var(--teal-dim) 30%,var(--teal) 50%,var(--teal-dim) 70%,transparent); box-shadow:0 0 20px rgba(91,207,207,0.3); }
+    footer { padding:12px 18px; text-align:center; color:var(--text-mute); font-size:0.6rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; background:rgba(5,12,18,0.8); backdrop-filter:blur(16px); }
+    #mfr-page { position:relative; z-index:1; min-height:100vh; display:none; }
+    .mfr-header { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:rgba(5,12,18,0.88); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; min-height:var(--header-h); gap:10px; }
+    .mfr-logo { display:flex; align-items:center; gap:9px; cursor:pointer; text-decoration:none; flex-shrink:0; }
+    .mfr-logo-mark { width:28px; height:28px; color:var(--teal); filter:drop-shadow(0 0 5px rgba(91,207,207,0.4)); }
+    .mfr-logo-name { font-family:var(--font-ui); font-size:0.84rem; font-weight:700; color:var(--text); line-height:1.1; }
+    .mfr-logo-name span { color:var(--teal); }
+    .mfr-logo-sub { font-size:0.53rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-mute); }
+    .mfr-header-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .company-pill { display:flex; align-items:center; gap:6px; padding:4px 10px; background:var(--teal-glow); border:1px solid var(--border); border-radius:20px; font-size:0.72rem; font-weight:600; color:var(--teal-lit); white-space:nowrap; }
+    .company-dot { width:6px; height:6px; border-radius:50%; background:var(--teal); box-shadow:0 0 6px var(--teal); animation:pulse 2s ease infinite; flex-shrink:0; }
+    .signout-btn { padding:5px 11px; border-radius:7px; background:transparent; border:1px solid rgba(255,79,79,0.25); color:rgba(255,79,79,0.7); font-family:var(--font-ui); font-size:0.72rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; white-space:nowrap; -webkit-tap-highlight-color:transparent; }
+    .signout-btn:hover { border-color:var(--red); color:var(--red-lit); }
+    .back-verify-btn { padding:5px 11px; border-radius:7px; background:transparent; border:1px solid var(--border); color:var(--text-dim); font-family:var(--font-ui); font-size:0.72rem; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; white-space:nowrap; -webkit-tap-highlight-color:transparent; }
+    .back-verify-btn:hover { border-color:var(--border-hi); color:var(--text); }
+    .dash-body { display:flex; min-height:calc(100vh - var(--header-h)); }
+    .sidebar { width:210px; flex-shrink:0; background:rgba(10,18,22,0.75); border-right:1px solid var(--border); padding:18px 0; display:flex; flex-direction:column; gap:2px; backdrop-filter:blur(12px); position:sticky; top:var(--header-h); height:calc(100vh - var(--header-h)); overflow-y:auto; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 18px; cursor:pointer; transition:all 0.15s; color:var(--text-mute); font-size:0.79rem; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; border-left:2px solid transparent; -webkit-tap-highlight-color:transparent; }
+    .nav-item:hover { color:var(--text-dim); background:rgba(91,207,207,0.04); }
+    .nav-item.active { color:var(--teal); border-left-color:var(--teal); background:var(--teal-glow); }
+    .nav-item .nav-icon { font-size:1rem; width:18px; text-align:center; flex-shrink:0; }
+    .nav-badge { margin-left:auto; background:rgba(255,79,79,0.15); border:1px solid rgba(255,79,79,0.3); color:var(--red-lit); border-radius:10px; padding:1px 7px; font-size:0.63rem; font-weight:700; }
+    .dash-main { flex:1; overflow-y:auto; padding:28px 28px 40px; min-width:0; }
+    .mobile-bottom-nav { display:none; position:fixed; bottom:0; left:0; right:0; background:rgba(5,12,18,0.97); backdrop-filter:blur(20px); border-top:1px solid var(--border); z-index:100; height:var(--bottom-nav-h); padding:0 2px; justify-content:space-around; align-items:stretch; }
+    .mob-nav-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px; cursor:pointer; transition:all 0.15s; color:var(--text-mute); font-size:0.57rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; min-width:0; flex:1; position:relative; border-top:2px solid transparent; -webkit-tap-highlight-color:transparent; }
+    .mob-nav-btn.active { color:var(--teal); border-top-color:var(--teal); }
+    .mob-nav-btn .mob-icon { font-size:1.15rem; line-height:1; }
+    .mob-nav-badge { position:absolute; top:5px; right:calc(50% - 18px); background:var(--red); color:#fff; border-radius:8px; padding:1px 5px; font-size:0.54rem; font-weight:700; display:none; line-height:1.4; }
+    .view { display:none; flex-direction:column; gap:18px; animation:fadeUp 0.3s ease both; }
+    .view.active { display:flex; }
+    .login-wrap { min-height:calc(100vh - var(--header-h)); display:flex; align-items:center; justify-content:center; padding:24px; }
+    .login-card { width:100%; max-width:400px; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:32px 28px; backdrop-filter:blur(16px); display:flex; flex-direction:column; gap:14px; }
+    .login-brand { display:flex; align-items:center; gap:10px; }
+    .login-brand-icon { width:30px; height:30px; color:var(--teal); filter:drop-shadow(0 0 5px rgba(91,207,207,0.4)); flex-shrink:0; }
+    .login-title { font-family:var(--font-display); font-size:1.5rem; font-weight:700; color:var(--text); margin-top:4px; }
+    .login-sub { font-size:0.8rem; color:var(--text-mute); font-weight:500; margin-top:-6px; }
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .page-title { font-family:var(--font-display); font-size:clamp(1.3rem,4vw,1.6rem); font-weight:700; color:var(--text); }
+    .page-sub { font-size:0.78rem; color:var(--text-mute); margin-top:3px; font-weight:500; }
+    .dash-stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .dash-stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; backdrop-filter:blur(10px); transition:border-color 0.2s; }
+    .dash-stat-card:hover { border-color:var(--border-hi); }
+    .dash-stat-value { font-family:var(--font-mono); font-size:1.85rem; font-weight:500; color:var(--teal); line-height:1; margin-bottom:5px; }
+    .dash-stat-value.red { color:var(--red-lit); }
+    .glass-card-dash { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; backdrop-filter:blur(12px); }
+    .section-label { font-size:0.62rem; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-mute); margin-bottom:14px; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .alert-list { display:flex; flex-direction:column; gap:8px; }
+    .alert-item { display:flex; align-items:flex-start; gap:12px; padding:12px 13px; background:var(--surface2); border-radius:10px; border-left:3px solid transparent; }
+    .alert-item.HIGH { border-left-color:var(--red); }
+    .alert-item.MEDIUM { border-left-color:var(--amber); }
+    .alert-item.resolved { opacity:0.4; }
+    .alert-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:6px; }
+    .alert-dot.HIGH { background:var(--red); box-shadow:0 0 8px var(--red); }
+    .alert-dot.MEDIUM { background:var(--amber); box-shadow:0 0 8px var(--amber); }
+    .alert-body { flex:1; min-width:0; }
+    .alert-type { font-size:0.63rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:3px; }
+    .alert-type.HIGH { color:var(--red-lit); }
+    .alert-type.MEDIUM { color:var(--amber-lit); }
+    .alert-desc { font-size:0.82rem; color:var(--text-dim); line-height:1.5; }
+    .alert-meta { font-size:0.65rem; color:var(--text-mute); margin-top:4px; font-family:var(--font-mono); }
+    .alert-actions { display:flex; gap:6px; margin-top:6px; }
+    .resolve-btn { padding:4px 10px; border-radius:6px; background:rgba(91,207,207,0.08); border:1px solid rgba(91,207,207,0.2); color:var(--teal); font-family:var(--font-ui); font-size:0.68rem; font-weight:700; text-transform:uppercase; cursor:pointer; transition:all 0.15s; }
+    .resolve-btn:hover { background:rgba(91,207,207,0.16); }
+    .empty-state { text-align:center; padding:28px 20px; color:var(--text-mute); font-size:0.82rem; }
+    .filter-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .batch-table { width:100%; border-collapse:collapse; font-size:0.82rem; min-width:540px; }
+    .batch-table th { font-size:0.6rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mute); text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .batch-table td { padding:10px 10px; color:var(--text-dim); border-bottom:1px solid rgba(91,207,207,0.05); vertical-align:middle; }
+    .batch-table tr:last-child td { border-bottom:none; }
+    .batch-table tr:hover td { background:rgba(91,207,207,0.03); }
+    .batch-name-cell { color:var(--text); font-weight:600; }
+    .batch-id-cell { font-family:var(--font-mono); font-size:0.7rem; }
+    .cat-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; font-size:0.66rem; font-weight:600; background:var(--teal-glow); border:1px solid var(--border); color:var(--teal-lit); white-space:nowrap; }
+    .exp-badge { padding:2px 8px; border-radius:10px; font-size:0.66rem; font-weight:600; white-space:nowrap; }
+    .exp-badge.ok { background:rgba(91,207,207,0.08); border:1px solid rgba(91,207,207,0.2); color:var(--teal); }
+    .exp-badge.expired { background:rgba(255,79,79,0.08); border:1px solid rgba(255,79,79,0.2); color:var(--red-lit); }
+    .dash-form-group { display:flex; flex-direction:column; gap:7px; }
+    .dash-form-label { font-size:0.63rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mute); }
+    .dash-form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .dash-form-textarea { width:100%; background:rgba(91,207,207,0.04); border:1px solid var(--border); border-radius:8px; padding:11px 14px; color:var(--text); font-family:var(--font-ui); font-size:0.875rem; resize:none; height:76px; outline:none; transition:border-color 0.15s; }
+    .dash-form-textarea:focus { border-color:var(--teal-dim); }
+    .dash-form-textarea::placeholder { color:var(--text-mute); }
+    .cat-tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .cat-tab { padding:6px 11px; border-radius:20px; font-size:0.73rem; font-weight:600; cursor:pointer; border:1px solid rgba(91,207,207,0.15); background:rgba(91,207,207,0.04); color:var(--text-mute); transition:all 0.15s; letter-spacing:0.04em; -webkit-tap-highlight-color:transparent; }
+    .cat-tab.active { border-color:var(--teal); color:var(--teal); background:var(--teal-glow); }
+    .cat-tab:active { transform:scale(0.95); }
+    .btn { padding:10px 18px; border-radius:8px; font-family:var(--font-ui); font-weight:700; font-size:0.84rem; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; border:none; -webkit-tap-highlight-color:transparent; }
+    .btn:active { transform:scale(0.97); }
+    .btn-teal { background:linear-gradient(135deg,rgba(91,207,207,0.22),rgba(50,140,140,0.18)); border:1px solid var(--teal) !important; color:var(--teal); box-shadow:0 0 20px rgba(91,207,207,0.12); }
+    .btn-teal:hover { box-shadow:0 0 28px rgba(91,207,207,0.22); }
+    .btn-ghost { background:transparent; border:1px solid var(--border) !important; color:var(--text-mute); }
+    .btn-ghost:hover { border-color:var(--border-hi) !important; color:var(--text); }
+    .dash-reg-success { display:none; flex-direction:column; align-items:center; gap:10px; padding:22px 18px; text-align:center; background:rgba(20,32,30,0.9); border:1px solid rgba(91,207,207,0.25); border-radius:14px; backdrop-filter:blur(12px); }
+    .dash-reg-success.show { display:flex; animation:fadeUp 0.3s ease; }
+    .dash-reg-success-title { font-family:var(--font-display); font-weight:700; font-size:1.25rem; color:var(--teal-lit); }
+    .dash-reg-success-id { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-dim); background:rgba(91,207,207,0.04); border:1px solid var(--border); padding:9px 13px; border-radius:8px; width:100%; word-break:break-all; }
+    .scan-list { display:flex; flex-direction:column; gap:6px; }
+    .scan-item { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--surface2); border-radius:8px; border:1px solid rgba(91,207,207,0.06); gap:8px; flex-wrap:wrap; }
+    .scan-id { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-dim); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+    .scan-time { font-size:0.68rem; color:var(--text-mute); flex-shrink:0; }
+    .scan-flag { font-size:0.66rem; font-weight:700; padding:2px 7px; border-radius:6px; flex-shrink:0; }
+    .scan-flag.ok { background:rgba(91,207,207,0.08); color:var(--teal); border:1px solid rgba(91,207,207,0.2); }
+    .scan-flag.flagged { background:rgba(255,79,79,0.08); color:var(--red-lit); border:1px solid rgba(255,79,79,0.2); }
+    .spinner-wrap { display:flex; align-items:center; justify-content:center; padding:40px; }
+    .dash-spinner { width:36px; height:36px; border:2px solid rgba(91,207,207,0.15); border-top-color:var(--teal); border-radius:50%; animation:spin 0.8s linear infinite; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(calc(100% + 200px)); background:rgba(10,24,36,0.97); border:1px solid var(--border-hi); border-radius:10px; padding:11px 18px; font-size:0.82rem; font-weight:600; letter-spacing:0.04em; z-index:9999; transition:transform 0.28s cubic-bezier(.22,.68,0,1.2); box-shadow:0 8px 32px rgba(0,0,0,0.7); color:var(--text); max-width:88vw; text-align:center; backdrop-filter:blur(20px); }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    @media (max-width:700px) { .toast { bottom:calc(62px + 18px); } }
+    @media (max-width:960px) { .dash-stat-grid { grid-template-columns:repeat(2,1fr); } .two-col { grid-template-columns:1fr; } }
+    @media (max-width:700px) {
+      .sidebar { display:none; } .mobile-bottom-nav { display:flex; } .company-pill { display:none; }
+      .mfr-header { padding:8px 14px; } .back-verify-btn, .signout-btn { font-size:0.68rem; padding:5px 9px; }
+      .dash-main { padding:16px 14px calc(var(--bottom-nav-h) + 24px); }
+      .toast { bottom:calc(var(--bottom-nav-h) + 14px); }
+      .dash-form-row { grid-template-columns:1fr; }
+      .page-header { flex-direction:column; gap:10px; }
+      .page-header .btn { width:100%; text-align:center; }
+      .page-header .filter-row { width:100%; }
+    }
+    @media (max-width:420px) {
+      .logo-motto { display:none; } .hero h1 { font-size:2.2rem; } .feature-text { font-size:0.55rem; }
+      .trust-bar { gap:10px; } .mob-nav-btn { font-size:0.52rem; } .mob-nav-btn .mob-icon { font-size:1.05rem; }
+      .sys-stat-value { font-size:1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="verify-page">
+  <div class="app">
+    <header>
+      <div class="logo" onclick="goHome()">
+        <svg class="logo-mark" viewBox="0 0 24 24" fill="none">
+          <polygon points="12,2 20,6.5 20,15.5 12,20 4,15.5 4,6.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <polygon points="12,6 17,8.75 17,14.25 12,17 7,14.25 7,8.75" stroke="currentColor" stroke-width="1" fill="rgba(91,207,207,0.12)"/>
+          <circle cx="12" cy="11" r="2" fill="currentColor" opacity="0.9"/>
+        </svg>
+        <div>
+          <div class="logo-name"><span>Wanza</span>Block</div>
+          <div class="logo-sub">Product Authentication</div>
+          <div class="logo-motto">Your compass in digital transformation</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="nav-btn active" id="nav-verify" onclick="showVerifyPage()">Verify</button>
+        <button class="nav-btn" id="nav-mfr" onclick="showMfrPage()">Manufacturer</button>
+      </div>
+    </header>
+    <main>
+      <div class="screen active" id="screen-home">
+        <div class="hero">
+          <h1>Verify Before<br>You <em>Buy</em></h1>
+          <p>Don't guess, verify. Get instant blockchain backed proof that your essential supplies are safe, authentic, and tamper proof.</p>
+        </div>
+        <button class="scan-btn" onclick="startScanner()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/>
+            <rect x="3" y="16" width="5" height="5" rx="1"/><path d="M21 16h-3a2 2 0 00-2 2v3"/>
+            <path d="M21 21v.01"/><path d="M12 7v3a2 2 0 01-2 2H7"/>
+            <path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/>
+          </svg>
+          Scan QR Code
+        </button>
+        <div class="manual-section">
+          <div class="manual-label">Or verify using product ID</div>
+          <div class="manual-row">
+            <!-- FIX #2: Added onkeydown Enter handler (was missing, password field had it but this didn't) -->
+            <input class="manual-input" id="manual-input" type="text" placeholder="e.g. WB-MMHZWF4C-00001" onkeydown="if(event.key==='Enter') verifyManual()" />
+            <button class="manual-btn" onclick="verifyManual()">Check</button>
+          </div>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card"><div class="feature-icon">⬡</div><div class="feature-text">Seeds &amp; Fertilizer</div></div>
+          <div class="feature-card"><div class="feature-icon">✦</div><div class="feature-text">Medicines</div></div>
+          <div class="feature-card"><div class="feature-icon">⊛</div><div class="feature-text">Tamper-Proof</div></div>
+        </div>
+        <div class="sys-health">
+          <div class="sys-health-stats">
+            <div class="sys-stat"><div class="sys-stat-value loading" id="sh-verified">—</div><div class="sys-stat-label">Products Verified</div></div>
+            <div class="sys-stat"><div class="sys-stat-value loading" id="sh-batches">—</div><div class="sys-stat-label">Secured Batches</div></div>
+            <div class="sys-stat"><div class="sys-stat-value loading" id="sh-clones">—</div><div class="sys-stat-label">Clone Flags This Week</div></div>
+          </div>
+          <div class="sys-net-status">
+            <div class="net-dot" id="net-dot"></div>
+            <span class="net-label" id="net-label"><strong>Base Sepolia Testnet</strong>&nbsp; Operational</span>
+          </div>
+        </div>
+        <div class="trust-bar">
+          <div class="trust-item"><div class="trust-dot">✓</div>Blockchain Secured</div>
+          <div class="trust-item"><div class="trust-dot">✓</div>Tamper Detection</div>
+          <div class="trust-item"><div class="trust-dot">✓</div>Verified Manufacturers</div>
+        </div>
+      </div>
+
+      <div class="screen" id="screen-scanner">
+        <div class="scanner-header">
+          <div class="back-btn" onclick="stopScanner(); goHome();">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          </div>
+          <div class="scanner-title">Point at QR Code</div>
+        </div>
+        <div class="scanner-wrap">
+          <div id="qr-reader"></div>
+          <div class="scanner-overlay">
+            <div class="scanner-frame"><div class="scanner-frame-inner"></div><div class="scan-line"></div></div>
+          </div>
+        </div>
+        <p class="scanner-hint">Hold steady — detects automatically</p>
+      </div>
+
+      <div class="loading-screen" id="screen-loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Checking blockchain…</div>
+      </div>
+
+      <div class="screen" id="screen-result">
+        <div class="result-badge" id="result-badge">
+          <span class="result-icon" id="result-icon">✦</span>
+          <div class="result-status" id="result-status">Genuine</div>
+          <div class="result-message" id="result-message">This product is verified and safe to use.</div>
+        </div>
+        <div class="detail-card" id="result-details" style="display:none;">
+          <div class="detail-card-label">Product Details</div>
+          <div class="detail-row"><span class="detail-label">Product</span><span class="detail-value" id="detail-name">—</span></div>
+          <div class="detail-row"><span class="detail-label">Batch ID</span><span class="detail-value" style="font-family:var(--font-mono);font-size:0.72rem;" id="detail-batch">—</span></div>
+          <div class="detail-row"><span class="detail-label">Category</span><span class="detail-value" id="detail-category">—</span></div>
+          <div class="detail-row"><span class="detail-label">Expires</span><span class="detail-value" id="detail-expiry">—</span></div>
+          <div class="detail-row">
+            <div style="width:100%;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="detail-label">Times Scanned</span><span class="detail-value" id="detail-scans">0</span>
+              </div>
+              <div class="scan-bar-track"><div class="scan-bar-fill" id="scan-bar" style="width:0%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="report-card" id="report-section" style="display:none;">
+          <div class="detail-card-label" style="margin-bottom:10px;">Report Suspicious Product</div>
+          <div class="report-form">
+            <textarea class="report-textarea" id="report-notes" placeholder="Describe what looks wrong (optional)..."></textarea>
+            <button class="action-btn btn-danger" onclick="submitReport()">Submit Report</button>
+          </div>
+        </div>
+        <div class="proof-card" id="proof-card" style="display:none;">
+          <div class="proof-header"><span class="proof-check">✓</span><span class="proof-title">Blockchain Proof</span></div>
+          <div class="proof-row"><span class="proof-label">Network</span><span class="proof-value" id="proof-network">Base Sepolia</span></div>
+          <div class="proof-row"><span class="proof-label">Tx Hash</span><span class="proof-value" id="proof-tx">—</span></div>
+          <div class="proof-row"><span class="proof-label">Manufacturer</span><span class="proof-value" id="proof-mfr">—</span></div>
+          <a class="proof-link" id="proof-link" href="#" target="_blank" rel="noopener">View on Basescan ↗</a>
+        </div>
+        <div class="action-row">
+          <button class="action-btn btn-primary" onclick="goHome()">Scan Another</button>
+          <button class="action-btn btn-secondary" onclick="toggleReport()">Report Fake</button>
+        </div>
+      </div>
+    </main>
+    <div class="bottom-glow"></div>
+    <footer>WanzaBlock Solutions · Blockchain-Secured Authentication · 2026</footer>
+  </div>
+</div>
+
+<div id="mfr-page">
+  <div id="dash-login-section">
+    <header class="mfr-header">
+      <div class="mfr-logo" onclick="showVerifyPage()">
+        <svg class="mfr-logo-mark" viewBox="0 0 24 24" fill="none">
+          <polygon points="12,2 20,6.5 20,15.5 12,20 4,15.5 4,6.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <polygon points="12,6 17,8.75 17,14.25 12,17 7,14.25 7,8.75" stroke="currentColor" stroke-width="1" fill="rgba(91,207,207,0.12)"/>
+          <circle cx="12" cy="11" r="2" fill="currentColor" opacity="0.9"/>
+        </svg>
+        <div><div class="mfr-logo-name"><span>Wanza</span>Block</div><div class="mfr-logo-sub">Manufacturer Portal</div></div>
+      </div>
+      <button class="back-verify-btn" onclick="showVerifyPage()">← Back to Verify</button>
+    </header>
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-brand">
+          <svg class="login-brand-icon" viewBox="0 0 24 24" fill="none">
+            <polygon points="12,2 20,6.5 20,15.5 12,20 4,15.5 4,6.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <polygon points="12,6 17,8.75 17,14.25 12,17 7,14.25 7,8.75" stroke="currentColor" stroke-width="1" fill="rgba(91,207,207,0.12)"/>
+            <circle cx="12" cy="11" r="2" fill="currentColor" opacity="0.9"/>
+          </svg>
+          <div><div class="mfr-logo-name"><span>Wanza</span>Block Solutions</div><div class="mfr-logo-sub">Manufacturer Portal</div></div>
+        </div>
+        <div class="login-title">Sign In</div>
+        <div class="login-sub">Access your product dashboard</div>
+        <div class="dash-form-group">
+          <div class="dash-form-label">Company Email</div>
+          <input class="form-input" id="dash-login-email" type="email" placeholder="company@example.com" autocomplete="email"/>
+        </div>
+        <div class="dash-form-group">
+          <div class="dash-form-label">Password</div>
+          <input class="form-input" id="dash-login-password" type="password" placeholder="Your password" onkeydown="if(event.key==='Enter') dashLogin()" autocomplete="current-password"/>
+        </div>
+        <button class="btn btn-teal" style="width:100%;margin-top:6px;" onclick="dashLogin()">Sign In</button>
+        <div style="text-align:center;font-size:0.78rem;color:var(--text-mute);line-height:1.6;">
+          No account? Contact <span style="color:var(--teal);">wanzablock@gmail.com</span> to get started.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dash-main-section" style="display:none;">
+    <header class="mfr-header">
+      <div class="mfr-logo" onclick="showVerifyPage()">
+        <svg class="mfr-logo-mark" viewBox="0 0 24 24" fill="none">
+          <polygon points="12,2 20,6.5 20,15.5 12,20 4,15.5 4,6.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <polygon points="12,6 17,8.75 17,14.25 12,17 7,14.25 7,8.75" stroke="currentColor" stroke-width="1" fill="rgba(91,207,207,0.12)"/>
+          <circle cx="12" cy="11" r="2" fill="currentColor" opacity="0.9"/>
+        </svg>
+        <div><div class="mfr-logo-name"><span>Wanza</span>Block</div><div class="mfr-logo-sub">Manufacturer Portal</div></div>
+      </div>
+      <div class="mfr-header-right">
+        <button class="back-verify-btn" onclick="showVerifyPage()">← Verify</button>
+        <div class="company-pill"><div class="company-dot"></div><span id="company-name-header">Company</span></div>
+        <button class="signout-btn" onclick="dashLogout()">Sign Out</button>
+      </div>
+    </header>
+    <div class="dash-body">
+      <nav class="sidebar">
+        <div class="nav-item active" onclick="showView('overview')" id="nav-overview"><span class="nav-icon">◉</span> Overview</div>
+        <div class="nav-item" onclick="showView('alerts')" id="nav-alerts"><span class="nav-icon">⬡</span> Alerts<span class="nav-badge" id="alert-badge" style="display:none;">0</span></div>
+        <div class="nav-item" onclick="showView('batches')" id="nav-batches"><span class="nav-icon">▦</span> Batches</div>
+        <div class="nav-item" onclick="showView('register')" id="nav-register"><span class="nav-icon">⊕</span> Register</div>
+        <div class="nav-item" onclick="showView('scans')" id="nav-scans"><span class="nav-icon">⌖</span> Scans</div>
+      </nav>
+      <main class="dash-main">
+        <div class="view active" id="view-overview">
+          <div class="page-header">
+            <div><div class="page-title" id="overview-greeting">Dashboard</div><div class="page-sub" id="overview-date"></div></div>
+          </div>
+          <div class="dash-stat-grid">
+            <div class="dash-stat-card"><div class="dash-stat-value" id="s-batches">—</div><div class="dash-stat-label">Batches</div></div>
+            <div class="dash-stat-card"><div class="dash-stat-value" id="s-items">—</div><div class="dash-stat-label">Total Items</div></div>
+            <div class="dash-stat-card"><div class="dash-stat-value" id="s-scans">—</div><div class="dash-stat-label">Verifications</div></div>
+            <div class="dash-stat-card"><div class="dash-stat-value red" id="s-alerts">—</div><div class="dash-stat-label">Open Alerts</div></div>
+          </div>
+          <div class="two-col">
+            <div class="glass-card-dash"><div class="section-label">Latest Alerts</div><div class="alert-list" id="overview-alerts"><div class="spinner-wrap"><div class="dash-spinner"></div></div></div></div>
+            <div class="glass-card-dash"><div class="section-label">Recent Scans</div><div class="scan-list" id="overview-scans"><div class="spinner-wrap"><div class="dash-spinner"></div></div></div></div>
+          </div>
+        </div>
+        <div class="view" id="view-alerts">
+          <div class="page-header">
+            <div><div class="page-title">Counterfeit Alerts</div><div class="page-sub">Geo-detection flags for your products</div></div>
+            <div class="filter-row">
+              <button class="btn btn-ghost" onclick="loadAlerts('false')">Open</button>
+              <button class="btn btn-ghost" onclick="loadAlerts('true')">Resolved</button>
+              <button class="btn btn-ghost" onclick="loadAlerts()">All</button>
+            </div>
+          </div>
+          <div class="glass-card-dash"><div class="alert-list" id="alerts-list"><div class="spinner-wrap"><div class="dash-spinner"></div></div></div></div>
+        </div>
+        <div class="view" id="view-batches">
+          <div class="page-header">
+            <div><div class="page-title">Your Batches</div><div class="page-sub">All products on blockchain</div></div>
+            <button class="btn btn-teal" onclick="showView('register')">+ Register New</button>
+          </div>
+          <div class="glass-card-dash">
+            <div class="section-label">All Batches</div>
+            <div class="table-scroll">
+              <table class="batch-table">
+                <thead><tr><th>Product</th><th>Batch ID</th><th>Category</th><th>Qty</th><th>Expiry</th><th>Registered</th></tr></thead>
+                <tbody id="batch-tbody"><tr><td colspan="6"><div class="spinner-wrap"><div class="dash-spinner"></div></div></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="view" id="view-register">
+          <div class="page-header"><div><div class="page-title">Register New Batch</div><div class="page-sub">Write product records to blockchain</div></div></div>
+          <div class="dash-reg-success" id="dash-reg-success">
+            <div style="font-size:2rem;">⬡</div>
+            <div class="dash-reg-success-title">Batch Registered</div>
+            <div style="font-size:0.8rem;color:var(--text-dim);">Batch ID written to blockchain.</div>
+            <div class="dash-reg-success-id" id="dash-reg-batch-id">—</div>
+            <button class="btn btn-ghost" style="width:100%;margin-top:4px;" onclick="document.getElementById('dash-reg-success').classList.remove('show')">Register Another</button>
+          </div>
+          <div class="glass-card-dash" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="dash-form-group"><div class="dash-form-label">Product Name</div><input class="form-input" id="r-product" type="text" placeholder="e.g. Maize Seed MK400"/></div>
+            <div class="dash-form-group">
+              <div class="dash-form-label">Category</div>
+              <div class="cat-tabs" id="dash-cat-tabs">
+                <div class="cat-tab active" onclick="selectDashCat(this,'seed')">⬡ Seeds</div>
+                <div class="cat-tab" onclick="selectDashCat(this,'fertilizer')">◈ Fertilizer</div>
+                <div class="cat-tab" onclick="selectDashCat(this,'medicine')">✦ Medicine</div>
+                <div class="cat-tab" onclick="selectDashCat(this,'other')">▦ Other</div>
+              </div>
+            </div>
+            <div class="dash-form-row">
+              <div class="dash-form-group"><div class="dash-form-label">Quantity</div><input class="form-input" id="r-qty" type="number" min="1" placeholder="e.g. 500"/></div>
+              <div class="dash-form-group"><div class="dash-form-label">Expiry Date</div><input class="form-input" id="r-expiry" type="date"/></div>
+            </div>
+            <div class="dash-form-group"><div class="dash-form-label">Notes (optional)</div><textarea class="dash-form-textarea" id="r-notes" placeholder="Growing region, storage instructions..."></textarea></div>
+            <button class="btn btn-teal" id="reg-btn" style="width:100%;margin-top:4px;" onclick="dashRegisterBatch()">Register on Blockchain</button>
+          </div>
+        </div>
+        <div class="view" id="view-scans">
+          <div class="page-header"><div><div class="page-title">Recent Scans</div><div class="page-sub">Consumer verification activity</div></div></div>
+          <div class="glass-card-dash"><div class="section-label">Last 30 Scans</div><div class="scan-list" id="scans-list"><div class="spinner-wrap"><div class="dash-spinner"></div></div></div></div>
+        </div>
+      </main>
+    </div>
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+      <div class="mob-nav-btn active" onclick="showView('overview')" id="mob-overview"><span class="mob-icon">◉</span>Overview</div>
+      <div class="mob-nav-btn" onclick="showView('alerts')" id="mob-alerts"><span class="mob-nav-badge" id="mob-alert-badge">0</span><span class="mob-icon">⬡</span>Alerts</div>
+      <div class="mob-nav-btn" onclick="showView('batches')" id="mob-batches"><span class="mob-icon">▦</span>Batches</div>
+      <div class="mob-nav-btn" onclick="showView('register')" id="mob-register"><span class="mob-icon">⊕</span>Register</div>
+      <div class="mob-nav-btn" onclick="showView('scans')" id="mob-scans"><span class="mob-icon">⌖</span>Scans</div>
+    </nav>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script data-cfasync="false">
+const BACKEND_URL = "https://zambiabackend.vercel.app";
+
+// FIX #6 / #7 / #8: HTML escape helper — prevents XSS when inserting server data into innerHTML
+function escapeHTML(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+function showVerifyPage() {
+  stopScanner();
+  document.getElementById("verify-page").style.display = "";
+  document.getElementById("mfr-page").style.display = "none";
+  document.getElementById("nav-verify").classList.add("active");
+  document.getElementById("nav-mfr").classList.remove("active");
+  goHome();
+}
+
+function showMfrPage() {
+  stopScanner();
+  document.getElementById("verify-page").style.display = "none";
+  document.getElementById("mfr-page").style.display = "block";
+  document.getElementById("nav-verify").classList.remove("active");
+  document.getElementById("nav-mfr").classList.add("active");
+  if (dashToken) {
+    document.getElementById("dash-login-section").style.display = "none";
+    document.getElementById("dash-main-section").style.display = "";
+  } else {
+    document.getElementById("dash-login-section").style.display = "";
+    document.getElementById("dash-main-section").style.display = "none";
+  }
+}
+
+let currentItemId = null, html5QrCode = null, scannerRunning = false;
+// FIX #1: Track the stop promise so startScanner can wait for it properly
+let scannerStopPromise = Promise.resolve();
+
+function hideAllScreens() { document.querySelectorAll(".screen, .loading-screen").forEach(s => s.classList.remove("active")); }
+function showScreen(id) { hideAllScreens(); document.getElementById(id).classList.add("active"); }
+
+// FIX #9: Clear report notes and reset report section when going home
+function goHome() {
+  showScreen("screen-home");
+  currentItemId = null;
+  document.getElementById("report-notes").value = "";
+  document.getElementById("report-section").style.display = "none";
+}
+
+// FIX #1: stopScanner now stores and returns the stop promise so startScanner can wait on it
+function stopScanner() {
+  if (html5QrCode && scannerRunning) {
+    scannerStopPromise = html5QrCode.stop().catch(() => {});
+    scannerRunning = false;
+  }
+}
+
+function startScanner() {
+  // FIX #1: Wait for any in-progress stop before creating a new instance
+  scannerStopPromise.finally(() => {
+    document.getElementById("qr-reader").innerHTML = "";
+    html5QrCode = new Html5Qrcode("qr-reader");
+    showScreen("screen-scanner");
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 15, qrbox: { width: 160, height: 160 }, aspectRatio: 1.0 },
+      (decoded) => { stopScanner(); handleScan(decoded); },
+      () => {}
+    ).then(() => { scannerRunning = true; })
+    .catch(() => { showToast("Camera access denied. Use manual entry."); goHome(); });
+  });
+}
+
+function handleScan(raw) {
+  let itemId = raw.trim();
+  try { const url = new URL(raw); const p = url.searchParams.get("item") || url.searchParams.get("id"); if (p) itemId = p; } catch (_) {}
+  if (!itemId) { showToast("Could not read that code."); goHome(); return; }
+  verifyItem(itemId);
+}
+
+function verifyManual() {
+  const val = document.getElementById("manual-input").value.trim();
+  if (!val) { showToast("Please enter an item ID first."); return; }
+  handleScan(val);
+}
+
+async function verifyItem(itemId) {
+  currentItemId = itemId;
+  showScreen("screen-loading");
+  let lat = null, lng = null;
+  try { const pos = await getLocation(); lat = pos.coords.latitude; lng = pos.coords.longitude; } catch (_) {}
+  try {
+    const res = await fetch(`${BACKEND_URL}/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId, lat, lng }) });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showResult(data);
+    setTimeout(loadSystemHealth, 1000);
+  } catch (_) { goHome(); showToast("Verification failed. Check your connection."); }
+}
+
+function getLocation() {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) return rej();
+    navigator.geolocation.getCurrentPosition(res, rej, { timeout: 6000, maximumAge: 60000 });
+  });
+}
+
+function showResult(data) {
+  const badge = document.getElementById("result-badge"), details = document.getElementById("result-details"), report = document.getElementById("report-section");
+  badge.className = "result-badge";
+  const configs = {
+    GENUINE:         { cls: "genuine",    icon: "✦",  label: "Genuine",         msg: "This product is verified and safe to use." },
+    POTENTIAL_CLONE: { cls: "clone",      icon: "⬡",  label: "Potential Clone", msg: "Scanned too many times. Do not use this product." },
+    NOT_FOUND:       { cls: "notfound",   icon: "⊘",  label: "Not Found",       msg: "Not on the blockchain. Likely counterfeit." },
+    EXPIRED:         { cls: "expired",    icon: "◷",  label: "Expired",         msg: "Past its expiry date. Do not use." },
+    SUSPICIOUS:      { cls: "suspicious", icon: "◈",  label: "Suspicious",      msg: "Scanned very recently. Proceed with caution." },
+  };
+  const cfg = configs[data.status] || configs["NOT_FOUND"];
+  badge.classList.add(cfg.cls);
+  document.getElementById("result-icon").textContent = cfg.icon;
+  document.getElementById("result-status").textContent = cfg.label;
+  document.getElementById("result-message").textContent = cfg.msg;
+  if (data.productName) {
+    document.getElementById("detail-name").textContent = data.productName;
+    document.getElementById("detail-batch").textContent = data.batchId || currentItemId;
+    document.getElementById("detail-category").textContent = data.category ? data.category.charAt(0).toUpperCase() + data.category.slice(1) : "—";
+    document.getElementById("detail-expiry").textContent = data.isExpired ? "◷ Expired" : (data.expiryDate ? new Date(data.expiryDate).toLocaleDateString("en-ZM", { day: "numeric", month: "short", year: "numeric" }) : "—");
+    const count = data.scanCount || 0, bar = document.getElementById("scan-bar");
+    document.getElementById("detail-scans").textContent = count;
+    bar.style.width = Math.min((count / 10) * 100, 100) + "%";
+    bar.className = "scan-bar-fill" + (count > 7 ? " danger" : count > 4 ? " warn" : "");
+    details.style.display = "block";
+  } else { details.style.display = "none"; }
+  report.style.display = ["POTENTIAL_CLONE", "NOT_FOUND", "SUSPICIOUS"].includes(data.status) ? "block" : "none";
+  const proofCard = document.getElementById("proof-card");
+  if (data.txHash) {
+    document.getElementById("proof-tx").textContent = data.txHash.slice(0, 10) + "..." + data.txHash.slice(-6);
+    const mfrEl = document.getElementById("proof-mfr");
+    if (data.manufacturer) {
+      // FIX #8: Use escapeHTML on manufacturer address; use textContent for display, safe URL for href
+      const safeAddr = escapeHTML(data.manufacturer);
+      const short = safeAddr.slice(0, 8) + "..." + safeAddr.slice(-6);
+      // Ethereum addresses are hex (0x + 40 hex chars) so this URL is safe, but we still sanitize
+      mfrEl.innerHTML = `<a href="https://sepolia.basescan.org/address/${safeAddr}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:none;">${short} ↗</a>`;
+    } else { mfrEl.textContent = "—"; }
+    document.getElementById("proof-link").href = `https://sepolia.basescan.org/tx/${escapeHTML(data.txHash)}`;
+    proofCard.style.display = "block";
+  } else { proofCard.style.display = "none"; }
+  showScreen("screen-result");
+}
+
+function toggleReport() {
+  const s = document.getElementById("report-section");
+  s.style.display = s.style.display === "none" ? "block" : "none";
+}
+
+async function submitReport() {
+  const notes = document.getElementById("report-notes").value.trim();
+  let lat = null, lng = null;
+  try { const p = await getLocation(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (_) {}
+  try {
+    await fetch(`${BACKEND_URL}/report`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId: currentItemId, notes, lat, lng }) });
+    showToast("Report submitted. Thank you.");
+    document.getElementById("report-section").style.display = "none";
+  } catch (_) { showToast("Could not send report. Try again."); }
+}
+
+function fmtCount(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
+  if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+  return String(n);
+}
+
+function setNetStatus(state) {
+  const dot = document.getElementById("net-dot"), lbl = document.getElementById("net-label");
+  dot.className = "net-dot"; lbl.className = "net-label";
+  if (state === "ok") { lbl.innerHTML = "<strong>Base Sepolia Testnet</strong>&nbsp; Operational"; }
+  else if (state === "degraded") { dot.classList.add("degraded"); lbl.classList.add("degraded"); lbl.innerHTML = "<strong>Base Sepolia Testnet</strong>&nbsp; Checking…"; }
+  else { dot.classList.add("down"); lbl.classList.add("down"); lbl.innerHTML = "<strong>Base Sepolia Testnet</strong>&nbsp; Unavailable"; }
+}
+
+async function loadSystemHealth() {
+  // FIX #3: clearTimeout must run even if fetch throws — moved into finally block
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(`${BACKEND_URL}/stats/public`, { signal: ctrl.signal });
+    if (!res.ok) throw new Error("non-200");
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const vEl = document.getElementById("sh-verified");
+    const bEl = document.getElementById("sh-batches");
+    const cEl = document.getElementById("sh-clones");
+    vEl.textContent = fmtCount(data.scans ?? 0);
+    bEl.textContent = fmtCount(data.batches ?? 0);
+    cEl.textContent = String(data.weeklyCloneFlags ?? 0);
+    vEl.classList.remove("loading"); bEl.classList.remove("loading"); cEl.classList.remove("loading");
+    if ((data.weeklyCloneFlags ?? 0) > 0) cEl.classList.add("warn");
+    else cEl.classList.remove("warn");
+    setNetStatus("ok");
+  } catch (_) { setNetStatus("degraded"); }
+  finally { clearTimeout(timer); }  // always runs
+}
+
+let dashToken = null, dashMfrData = null, dashCat = "seed";
+function dashAuthHeaders() { return { "Content-Type": "application/json", "Authorization": `Bearer ${dashToken}` }; }
+
+async function dashLogin() {
+  const email = document.getElementById("dash-login-email").value.trim();
+  const password = document.getElementById("dash-login-password").value;
+  if (!email || !password) { showToast("Please fill in all fields."); return; }
+  showToast("Signing in...");
+  try {
+    const res = await fetch(`${BACKEND_URL}/mfr/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    dashToken = data.token; dashMfrData = data;
+    document.getElementById("dash-login-section").style.display = "none";
+    document.getElementById("dash-main-section").style.display = "";
+    document.getElementById("company-name-header").textContent = data.companyName;
+    document.getElementById("overview-greeting").textContent = `Welcome, ${data.companyName}`;
+    document.getElementById("overview-date").textContent = new Date().toLocaleDateString("en-ZM", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    populateStats(data); loadOverviewAlerts(); loadOverviewScans(); showView('overview');
+    if (window._statsInterval) clearInterval(window._statsInterval);
+    window._statsInterval = setInterval(() => {
+      refreshStats();
+      loadOverviewScans();
+      loadOverviewAlerts();
+    }, 10000);
+  } catch (err) { showToast("Login failed: " + err.message); }
+}
+
+function dashLogout() {
+  dashToken = null; dashMfrData = null;
+  if (window._statsInterval) clearInterval(window._statsInterval);
+  document.getElementById("dash-main-section").style.display = "none";
+  document.getElementById("dash-login-section").style.display = "";
+  document.getElementById("dash-login-password").value = "";
+}
+
+function showView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById(`view-${name}`).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  const sEl = document.getElementById(`nav-${name}`); if (sEl) sEl.classList.add("active");
+  document.querySelectorAll(".mob-nav-btn").forEach(n => n.classList.remove("active"));
+  const mEl = document.getElementById(`mob-${name}`); if (mEl) mEl.classList.add("active");
+  if (name === "alerts") loadAlerts("false");
+  if (name === "batches") loadBatches();
+  if (name === "scans") loadScans();
+  if (name === "overview") { refreshStats(); loadOverviewAlerts(); loadOverviewScans(); }
+  const dm = document.querySelector(".dash-main"); if (dm) dm.scrollTo(0, 0);
+}
+
+function populateStats(data) {
+  document.getElementById("s-batches").textContent = data.batchCount ?? '—';
+  document.getElementById("s-items").textContent = data.totalItems ?? '—';
+  document.getElementById("s-scans").textContent = data.totalScans ?? '—';
+  const n = data.openAlerts ?? data.alerts ?? 0;
+  document.getElementById("s-alerts").textContent = n;
+  const b = document.getElementById("alert-badge"), mb = document.getElementById("mob-alert-badge");
+  if (n > 0) { b.textContent = n; b.style.display = ""; mb.textContent = n; mb.style.display = ""; }
+  else { b.style.display = "none"; mb.style.display = "none"; }
+}
+
+async function refreshStats() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/mfr/stats`, { headers: dashAuthHeaders() });
+    const data = await res.json(); if (data.error) return;
+    document.getElementById("s-batches").textContent = data.batchCount;
+    document.getElementById("s-items").textContent = data.totalItems;
+    document.getElementById("s-scans").textContent = data.totalScans;
+    // FIX #5: Added ?? 0 fallback to match populateStats — prevents NaN in badge
+    const n = data.openAlerts ?? 0;
+    document.getElementById("s-alerts").textContent = n;
+    const b = document.getElementById("alert-badge"), mb = document.getElementById("mob-alert-badge");
+    if (n > 0) { b.textContent = n; b.style.display = ""; mb.textContent = n; mb.style.display = ""; }
+    else { b.style.display = "none"; mb.style.display = "none"; }
+  } catch (_) {}
+}
+
+async function loadOverviewAlerts() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/mfr/alerts?resolved=false&limit=5`, { headers: dashAuthHeaders() });
+    const data = await res.json();
+    document.getElementById("overview-alerts").innerHTML = data.length ? data.map(a => alertItemHTML(a, false)).join("") : '<div class="empty-state">No open alerts — all clear ✓</div>';
+    // FIX #10: Attach resolve button listeners after rendering (avoids inline onclick with template literals)
+    attachResolveListeners(document.getElementById("overview-alerts"));
+  } catch (_) { document.getElementById("overview-alerts").innerHTML = '<div class="empty-state">Failed to load</div>'; }
+}
+
+async function loadAlerts(resolved) {
+  const list = document.getElementById("alerts-list");
+  list.innerHTML = '<div class="spinner-wrap"><div class="dash-spinner"></div></div>';
+  try {
+    const qs = resolved !== undefined ? `?resolved=${resolved}&limit=100` : "?limit=100";
+    const res = await fetch(`${BACKEND_URL}/mfr/alerts${qs}`, { headers: dashAuthHeaders() });
+    const data = await res.json();
+    list.innerHTML = data.length ? data.map(a => alertItemHTML(a, true)).join("") : '<div class="empty-state">No alerts found.</div>';
+    // FIX #10: Attach resolve button listeners after rendering
+    attachResolveListeners(list);
+  } catch (_) { list.innerHTML = '<div class="empty-state">Failed to load alerts.</div>'; }
+}
+
+// FIX #6 + #10: escapeHTML applied to all server-sourced fields; resolve button uses data-id attribute
+function alertItemHTML(a, showResolve) {
+  const time = new Date(a.detected_at).toLocaleString("en-ZM", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const severity = escapeHTML(a.severity || "");
+  const type = escapeHTML((a.type || "ALERT").replace(/_/g, " "));
+  const desc = escapeHTML(a.description || "");
+  const itemId = escapeHTML(a.item_id || "");
+  const resolveBtn = showResolve && !a.resolved
+    ? `<button class="resolve-btn" data-alert-id="${escapeHTML(String(a.id))}">Mark Resolved</button>`
+    : "";
+  return `<div class="alert-item ${severity} ${a.resolved ? "resolved" : ""}" id="alert-${escapeHTML(String(a.id))}">
+    <div class="alert-dot ${severity}"></div>
+    <div class="alert-body">
+      <div class="alert-type ${severity}">${type} · ${severity}</div>
+      <div class="alert-desc">${desc}</div>
+      <div class="alert-meta">${itemId} · ${time}</div>
+      ${resolveBtn ? `<div class="alert-actions">${resolveBtn}</div>` : ""}
+    </div></div>`;
+}
+
+// FIX #10: Event delegation for resolve buttons — safe because data-alert-id holds the ID
+function attachResolveListeners(container) {
+  container.querySelectorAll(".resolve-btn[data-alert-id]").forEach(btn => {
+    btn.addEventListener("click", function () {
+      resolveAlert(this.dataset.alertId, this);
+    });
+  });
+}
+
+async function resolveAlert(id, btn) {
+  btn.textContent = "Resolving..."; btn.disabled = true;
+  try {
+    const res = await fetch(`${BACKEND_URL}/mfr/alerts/${encodeURIComponent(id)}/resolve`, { method: "POST", headers: dashAuthHeaders() });
+    const data = await res.json(); if (data.error) throw new Error(data.error);
+    document.getElementById(`alert-${id}`).classList.add("resolved");
+    btn.closest(".alert-actions").remove();
+    showToast("Alert marked as resolved."); refreshStats();
+  } catch (err) { showToast("Failed: " + err.message); btn.textContent = "Mark Resolved"; btn.disabled = false; }
+}
+
+async function loadBatches() {
+  const tbody = document.getElementById("batch-tbody");
+  tbody.innerHTML = '<tr><td colspan="6"><div class="spinner-wrap"><div class="dash-spinner"></div></div></td></tr>';
+  try {
+    const res = await fetch(`${BACKEND_URL}/mfr/batches`, { headers: dashAuthHeaders() });
+    const data = await res.json();
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No batches yet.</div></td></tr>'; return; }
+    const catIcon = { seed: "⬡", fertilizer: "◈", medicine: "✦", other: "▦" };
+    tbody.innerHTML = data.map(b => {
+      const expired = b.expiry_date && new Date(b.expiry_date) < new Date();
+      const expLabel = b.expiry_date ? new Date(b.expiry_date).toLocaleDateString("en-ZM", { day: "numeric", month: "short", year: "numeric" }) : "—";
+      const regDate = b.registered_at ? new Date(b.registered_at).toLocaleDateString("en-ZM", { day: "numeric", month: "short", year: "numeric" }) : "—";
+      const cat = escapeHTML(b.category || "other");
+      return `<tr><td class="batch-name-cell">${escapeHTML(b.product_name)}</td><td class="batch-id-cell">${escapeHTML(b.batch_id)}</td>
+        <td><span class="cat-badge">${catIcon[b.category] || "▦"} ${cat}</span></td>
+        <td>${(b.quantity || 0).toLocaleString()}</td>
+        <td><span class="exp-badge ${expired ? "expired" : "ok"}">${expLabel}</span></td>
+        <td>${regDate}</td></tr>`;
+    }).join("");
+  } catch (_) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">Failed to load.</div></td></tr>'; }
+}
+
+function selectDashCat(el, cat) {
+  document.getElementById("dash-cat-tabs").querySelectorAll(".cat-tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active"); dashCat = cat;
+}
+
+async function dashRegisterBatch() {
+  const product = document.getElementById("r-product").value.trim();
+  const qty = parseInt(document.getElementById("r-qty").value, 10);
+  const expiry = document.getElementById("r-expiry").value;
+  const notes = document.getElementById("r-notes").value.trim();
+  if (!product) { showToast("Please enter a product name."); return; }
+  if (!qty || qty < 1) { showToast("Please enter a valid quantity."); return; }
+  if (!expiry) { showToast("Please select an expiry date."); return; }
+  const btn = document.getElementById("reg-btn");
+  btn.textContent = "Registering..."; btn.disabled = true;
+  try {
+    const res = await fetch(`${BACKEND_URL}/mfr/register-batch`, { method: "POST", headers: dashAuthHeaders(), body: JSON.stringify({ productName: product, category: dashCat, quantity: qty, expiryDate: expiry, notes }) });
+    const data = await res.json(); if (data.error) throw new Error(data.error);
+    document.getElementById("r-product").value = ""; document.getElementById("r-qty").value = "";
+    document.getElementById("r-expiry").value = ""; document.getElementById("r-notes").value = "";
+    const txLine = data.txHashes?.length ? "\nTx: " + data.txHashes[0].slice(0, 20) + "..." : "";
+    document.getElementById("dash-reg-batch-id").textContent = data.batchId + txLine;
+    document.getElementById("dash-reg-success").classList.add("show");
+    refreshStats();
+    setTimeout(loadSystemHealth, 1500);
+  } catch (err) { showToast("Error: " + err.message); }
+  // FIX #4: Button reset moved to finally — runs even if an unexpected error is thrown
+  finally {
+    btn.textContent = "Register on Blockchain";
+    btn.disabled = false;
+  }
+}
+
+async function loadOverviewScans() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/mfr/scans/recent`, { headers: dashAuthHeaders() });
+    const data = await res.json();
+    document.getElementById("overview-scans").innerHTML = data.length ? data.slice(0, 8).map(scanItemHTML).join("") : '<div class="empty-state">No scans yet.</div>';
+  } catch (_) { document.getElementById("overview-scans").innerHTML = '<div class="empty-state">Failed to load</div>'; }
+}
+
+async function loadScans() {
+  const list = document.getElementById("scans-list");
+  list.innerHTML = '<div class="spinner-wrap"><div class="dash-spinner"></div></div>';
+  try {
+    const res = await fetch(`${BACKEND_URL}/mfr/scans/recent`, { headers: dashAuthHeaders() });
+    const data = await res.json();
+    list.innerHTML = data.length ? data.map(scanItemHTML).join("") : '<div class="empty-state">No scans recorded yet.</div>';
+  } catch (_) { list.innerHTML = '<div class="empty-state">Failed to load scans.</div>'; }
+}
+
+// FIX #7: escapeHTML applied to s.item_id and s.district
+function scanItemHTML(s) {
+  const time = new Date(s.scanned_at).toLocaleString("en-ZM", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const itemId = escapeHTML(s.item_id || "");
+  const district = s.district ? " · " + escapeHTML(s.district) : "";
+  const flagClass = s.is_flagged ? "flagged" : "ok";
+  const flagLabel = s.is_flagged ? "Flagged" : "OK";
+  return `<div class="scan-item"><span class="scan-id">${itemId}</span><span class="scan-time">${time}${district}</span><span class="scan-flag ${flagClass}">${flagLabel}</span></div>`;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  loadSystemHealth();
+  setInterval(loadSystemHealth, 60000);
+  const _item = new URLSearchParams(window.location.search).get("item");
+  if (_item) setTimeout(() => verifyItem(_item), 500);
+});
+</script>
+</body>
+</html>
